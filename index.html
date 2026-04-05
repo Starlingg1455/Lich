@@ -3,103 +3,658 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Thời khóa biểu</title>
+  <title>Thời khóa biểu mobile - không OCR</title>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
-    * { box-sizing: border-box; }
-    body { margin: 0; font-family: "Inter", "Segoe UI", Arial, sans-serif; background: #f3f6fb; color: #1f2937; }
-    .app { display: grid; grid-template-columns: 360px 1fr; min-height: 100vh; position: relative; z-index: 2; transition: grid-template-columns .28s ease; }
-    body.sidebar-collapsed .app { grid-template-columns: 76px 1fr; }
-    .sidebar { background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%); border-right: 1px solid #d9e2ef; padding: 18px; overflow-y: auto; max-height: 100vh; transition: padding .28s ease; }
-    body.sidebar-collapsed .sidebar { padding: 12px; }
-    .main { padding: 24px; overflow: auto; max-height: 100vh; position: relative; }
-    .panel { background: rgba(255,255,255,0.96); border: 1px solid #d9e2ef; border-radius: 20px; padding: 18px; margin-bottom: 14px; box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06); backdrop-filter: blur(8px); }
-    h1, h2 { margin: 0 0 12px; }
-    .muted, .small { color: #6b7280; font-size: 13px; }
-    label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
-    input, select, textarea, button { font: inherit; }
-    input, select, textarea { width: 100%; padding: 11px 13px; border: 1px solid #cfd8e3; border-radius: 12px; margin-bottom: 12px; background: #fff; transition: border-color .2s ease, box-shadow .2s ease; }
-    input:focus, select:focus, textarea:focus { outline: none; border-color: #1677c8; box-shadow: 0 0 0 4px rgba(22,119,200,0.12); }
-    textarea { min-height: 90px; resize: vertical; }
-    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    button { border: none; border-radius: 12px; padding: 10px 14px; cursor: pointer; font-weight: 700; transition: 0.2s; }
-    button:hover { transform: translateY(-1px); }
-    .btn-primary { background: linear-gradient(135deg, #1677c8 0%, #0f5ea6 100%); color: white; }
-    .btn-secondary { background: #eef3f8; color: #1f2937; border: 1px solid #d7e0ec; }
-    .btn-danger { background: #b83b3b; color: white; }
-    .btn-block { width: 100%; }
-    .hidden { display: none; }
-    .dropzone { border: 2px dashed #c8d7ea; border-radius: 16px; padding: 18px 14px; text-align: center; background: #f8fbff; margin-bottom: 12px; }
-    .dropzone.dragover { background: #eef6ff; border-color: #1677c8; }
-    .preview-box { border: 1px solid #dbe3ee; border-radius: 14px; min-height: 120px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #fbfdff; margin-bottom: 12px; }
-    .preview-box img { width: 100%; display: block; }
-    .ocr-log { font-size: 12px; color: #4b5563; line-height: 1.5; background: #fbfdff; border: 1px solid #dbe3ee; border-radius: 12px; padding: 10px; max-height: 170px; overflow: auto; white-space: pre-wrap; }
-    .top-sticky { position: sticky; top: 0; z-index: 20; background: linear-gradient(to bottom, #f3f6fb 85%, rgba(243,246,251,0.92)); padding-bottom: 12px; margin-bottom: 14px; }
-    .toolbar-toggle { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; }
-    .toolbar-toggle button { padding:8px 12px; }
-    .toolbar-collapsed .toolbar-grid { display:none; }
-    .toolbar-grid { display: grid; grid-template-columns: 1.1fr 0.9fr 0.9fr 0.9fr; gap: 10px; }
-    .toolbar-grid .panel { margin: 0; }
-    .schedule-wrap { background: #fff; border: 1px solid #dbe3ee; border-radius: 20px; overflow: auto; box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06); max-height: calc(100vh - 180px); padding: 14px; }
-    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-    .week-table { min-width: auto; }
-    .week-table th:not(.period-col):not(.time-col), .week-table td:not(.period-col):not(.time-col) { min-width: 170px; }
-    .week-table .period-col { width: 70px; }
-    .week-table .time-col { width: 150px; }
-    th, td { border: 1px solid #dbe3ee; text-align: center; padding: 10px 8px; vertical-align: top; }
-    th { background: #f8fbff; position: sticky; top: 0; z-index: 5; }
-    .week-table .period-col, .week-table .time-col { position: sticky; left: 0; z-index: 6; }
-    .week-table .time-col { left: 70px; z-index: 6; }
-    .week-table td.period-col, .week-table td.time-col, .week-table th.period-col, .week-table th.time-col { background: #fbfdff; }
-    .week-table th.period-col, .week-table th.time-col { z-index: 8; }
-    .period-col { width: 70px; background: #fbfdff; font-weight: 700; }
-    .time-col { width: 150px; background: #fbfdff; font-weight: 700; }
-    .day-name { font-weight: 800; font-size: 16px; }
-    .day-date { font-size: 12px; color: #6b7280; margin-top: 4px; }
-    .slot { height: 96px; padding: 8px; background: #fff; cursor: pointer; position: relative; }
-    .slot.empty { background: #fcfdff; }
-    .slot.empty:hover { background: #f3f8ff; }
-    .empty-note-badge { position: absolute; right: 6px; bottom: 6px; font-size: 11px; color: #1677c8; background: rgba(22,119,200,0.08); padding: 3px 6px; border-radius: 999px; }
-    .class-card { height: 100%; border-radius: 14px; padding: 12px; text-align: left; color: #0f172a; cursor: pointer; overflow: hidden; border: 1px solid rgba(15,23,42,0.06); box-shadow: 0 8px 18px rgba(15,23,42,0.06), inset 0 0 0 1px rgba(255,255,255,0.3); }
-    .class-title { font-weight: 800; line-height: 1.2; margin-bottom: 5px; font-size: 15px; }
-    .class-meta { font-size: 13px; line-height: 1.4; }
-    .class-meta.teacher { font-weight: 700; }
-    .note-preview { margin-top: 8px; font-size: 12px; line-height: 1.35; background: #fff3cd; color: #7a4b00; border: 1px solid #f0d36b; padding: 6px 8px; border-radius: 10px; font-weight: 700; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .calendar-board { min-width: 980px; }
-    .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(130px, 1fr)); gap: 6px; }
-    .calendar-head { text-align: center; font-weight: 800; color: #1f3b64; padding: 8px 4px 10px; }
-    .calendar-head .head-date { display: block; font-size: 12px; color: #6b7280; margin-top: 4px; }
-    .calendar-day { min-height: 164px; background: #fbfdff; border: 1px solid #dbe3ee; border-radius: 16px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
-    .calendar-day.other-month { opacity: 0.42; }
-    .calendar-date { font-weight: 800; font-size: 18px; text-align: right; color: #1f2937; }
-    .calendar-item { border-radius: 12px; padding: 8px; text-align: left; color: #0f172a; font-size: 12px; line-height: 1.4; border: 1px solid rgba(0,0,0,0.06); cursor: pointer; box-shadow: 0 6px 14px rgba(15,23,42,0.05); }
-    .calendar-item-title { font-weight: 800; margin-bottom: 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .calendar-item-meta { opacity: 0.95; }
-    .calendar-empty { flex: 1; border-radius: 10px; cursor: pointer; }
-    .calendar-empty.has-note { background: rgba(22,119,200,0.08); border: 1px dashed rgba(22,119,200,0.35); min-height: 34px; padding: 6px; font-size: 12px; color: #1677c8; font-weight: 700; }
-    .list-item { border: 1px solid #dbe3ee; border-radius: 18px; padding: 14px; margin-bottom: 12px; background: #fafcff; box-shadow: 0 8px 18px rgba(15,23,42,0.04); }
-    .list-clickable { cursor: pointer; padding-bottom: 6px; }
-    .list-item strong { display: block; margin-bottom: 8px; font-size: 16px; }
-    .list-line { font-size: 14px; color: #4b5563; line-height: 1.45; }
-    .list-actions { display: flex; gap: 8px; margin-top: 10px; }
-    .exam-form .row { grid-template-columns: 1fr 1fr; }
-    .exam-chip { display:inline-block; font-size:11px; font-weight:800; color:#9b1c1c; background:#fff1f0; border:1px solid #ffd0cc; border-radius:999px; padding:3px 8px; margin-bottom:8px; }
-    .list-item.exam-list-item { background:#fff7f6; }
-    .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-    .legend-item { display: inline-flex; align-items: center; gap: 8px; background: white; padding: 9px 12px; border-radius: 999px; border: 1px solid #dbe3ee; font-size: 13px; box-shadow: 0 6px 12px rgba(15,23,42,0.04); }
-    .legend-color { width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.1); }
-    .modal { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 50; }
-    .modal.show { display: flex; }
-    .modal-box { width: min(720px, 100%); background: #fff; border-radius: 22px; padding: 22px; box-shadow: 0 20px 50px rgba(0,0,0,0.18); }
-    .modal-head { display: flex; justify-content: space-between; gap: 12px; align-items: start; margin-bottom: 14px; }
-    .modal-title { font-size: 22px; font-weight: 700; }
-    .close-btn { background: #eef2f7; color: #111827; width: 40px; height: 40px; border-radius: 10px; flex: 0 0 auto; }
-    .note-box { width: 100%; min-height: 180px; border: 1px solid #cfd8e3; border-radius: 12px; padding: 12px; resize: vertical; margin: 10px 0 14px; }
-    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
-    .sidebar-topbar { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom: 12px; position: sticky; top: 0; z-index: 30; background: linear-gradient(180deg, #ffffff 0%, rgba(255,255,255,0.88) 100%); padding-bottom: 8px; }
-    .sidebar-brand { font-weight: 800; font-size: 18px; color: #16345d; }
-    .icon-btn { width: 44px; height: 44px; border-radius: 12px; background: #eef4fb; color: #16345d; display:inline-flex; align-items:center; justify-content:center; font-size: 20px; border: 1px solid #dbe3ee; }
-    .icon-btn:hover { transform: translateY(-1px); background: #e8f1fb; }
+
+    :root{
+      --bg:#f4f7fb;
+      --surface:#ffffff;
+      --surface-soft:#f8fafc;
+      --border:#dbe3ee;
+      --border-strong:#cfd8e3;
+      --text:#111827;
+      --muted:#6b7280;
+      --primary:#2563eb;
+      --primary-soft:rgba(37,99,235,.12);
+      --danger:#dc2626;
+      --shadow:0 10px 28px rgba(15,23,42,.06);
+    }
+
+    *{box-sizing:border-box}
+
+    html,body{
+      height:100%;
+      overflow:hidden;
+    }
+
+    body{
+      margin:0;
+      font-family:"Inter","Segoe UI",Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
+
+    h1,h2{
+      margin:0 0 10px;
+      font-size:16px;
+      line-height:1.35;
+    }
+
+    label{
+      display:block;
+      margin-bottom:6px;
+      font-size:14px;
+      font-weight:600;
+    }
+
+    input,select,textarea,button{font:inherit}
+
+    input,select,textarea{
+      width:100%;
+      padding:10px 12px;
+      margin-bottom:10px;
+      border:1px solid var(--border-strong);
+      border-radius:10px;
+      background:#fff;
+      color:var(--text);
+      transition:border-color .18s ease, box-shadow .18s ease;
+    }
+
+    input:focus,select:focus,textarea:focus{
+      outline:none;
+      border-color:var(--primary);
+      box-shadow:0 0 0 3px var(--primary-soft);
+    }
+
+    textarea{
+      min-height:90px;
+      resize:vertical;
+    }
+
+    button{
+      border:none;
+      border-radius:10px;
+      padding:10px 12px;
+      font-weight:700;
+      cursor:pointer;
+      transition:transform .18s ease, filter .18s ease, background .18s ease;
+    }
+
+    button:hover{transform:translateY(-1px)}
+    button:active{transform:translateY(0)}
+
+    .btn-primary{background:var(--primary); color:#fff}
+    .btn-secondary{background:#f3f4f6; color:var(--text); border:1px solid var(--border)}
+    .btn-danger{background:var(--danger); color:#fff}
+    .btn-block{width:100%}
+
+    .small,.muted{font-size:12px; color:var(--muted)}
+    .hidden{display:none !important}
+
+    .app{
+      display:grid;
+      grid-template-columns:320px minmax(0,1fr);
+      height:100vh;
+      min-height:100vh;
+      overflow:hidden;
+      transition:grid-template-columns .25s ease;
+    }
+
+    .sidebar{
+      background:var(--surface);
+      border-right:1px solid var(--border);
+      padding:16px;
+      overflow:auto;
+      height:100vh;
+      max-height:100vh;
+    }
+
+    .main{
+      min-width:0;
+      min-height:100vh;
+      height:100vh;
+      padding:18px;
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
+    .panel{
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:14px;
+      margin-bottom:12px;
+      box-shadow:var(--shadow);
+    }
+
+    .panel.compact-panel{padding:14px}
+
+    .row{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+
+    .sidebar-topbar{
+      position:sticky;
+      top:0;
+      z-index:20;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:12px;
+      padding-bottom:8px;
+      background:linear-gradient(180deg,#fff 0%,rgba(255,255,255,.95) 100%);
+    }
+
+    .sidebar-brand{
+      font-size:17px;
+      font-weight:800;
+      color:#16345d;
+      letter-spacing:.01em;
+    }
+
+    .icon-btn{
+      width:40px;
+      height:40px;
+      padding:0;
+      border-radius:10px;
+      background:#f3f4f6;
+      border:1px solid var(--border);
+      color:#16345d;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      font-size:18px;
+      flex:0 0 auto;
+    }
+
+    .dropzone{
+      margin-bottom:12px;
+      padding:16px 14px;
+      text-align:center;
+      background:#f8fbff;
+      border:2px dashed #c8d7ea;
+      border-radius:14px;
+    }
+
+    .dropzone.dragover{
+      background:#eef6ff;
+      border-color:var(--primary);
+    }
+
+    .preview-box{
+      min-height:120px;
+      margin-bottom:12px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:#fbfdff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+    }
+
+    .preview-box img{
+      width:100%;
+      display:block;
+    }
+
+    .ocr-log{
+      max-height:170px;
+      overflow:auto;
+      padding:10px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:#fbfdff;
+      font-size:12px;
+      line-height:1.5;
+      color:#4b5563;
+      white-space:pre-wrap;
+    }
+
+    .top-sticky{
+      position:sticky;
+      top:0;
+      z-index:15;
+      background:linear-gradient(to bottom,var(--bg) 82%,rgba(244,247,251,.94));
+      padding-bottom:8px;
+    }
+
+    .toolbar-toggle{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:8px;
+    }
+
+    .toolbar-grid{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:10px;
+    }
+
+    .toolbar-grid .panel{
+      margin:0;
+      padding:12px;
+      min-width:0;
+    }
+
+    body.toolbar-collapsed .toolbar-grid{display:none}
+
+    .schedule-wrap{
+      position:relative;
+      flex:1;
+      min-height:0;
+      overflow:auto;
+      padding:10px;
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius:14px;
+      box-shadow:var(--shadow);
+      max-height:none;
+      overscroll-behavior:contain;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-gutter:stable both-edges;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      table-layout:fixed;
+    }
+
+    .week-table{
+      min-width:1280px;
+    }
+
+    .week-table .period-col{width:72px}
+    .week-table .time-col{width:150px}
+    .week-table th:not(.period-col):not(.time-col),
+    .week-table td:not(.period-col):not(.time-col){min-width:170px}
+
+    th,td{
+      border:1px solid var(--border);
+      padding:10px 8px;
+      text-align:center;
+      vertical-align:top;
+      background:#fff;
+    }
+
+    th{
+      position:sticky;
+      top:0;
+      z-index:3;
+      background:#f8fafc;
+    }
+
+    .period-col,.time-col{
+      background:#fbfdff;
+      font-weight:700;
+    }
+
+    .week-table th.period-col,
+    .week-table td.period-col{
+      position:sticky;
+      left:0;
+      z-index:5;
+    }
+
+    .week-table th.time-col,
+    .week-table td.time-col{
+      position:sticky;
+      left:72px;
+      z-index:5;
+    }
+
+    .week-table th.period-col,
+    .week-table th.time-col{
+      z-index:7;
+    }
+
+    .day-name{
+      font-size:15px;
+      font-weight:800;
+    }
+
+    .day-date{
+      margin-top:4px;
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    .slot{
+      position:relative;
+      height:92px;
+      padding:8px;
+      background:#fff;
+      cursor:pointer;
+    }
+
+    .slot.empty{
+      background:#fcfdff;
+    }
+
+    .slot.empty:hover{
+      background:#f3f8ff;
+    }
+
+    .empty-note-badge{
+      position:absolute;
+      right:6px;
+      bottom:6px;
+      padding:3px 6px;
+      border-radius:999px;
+      background:rgba(37,99,235,.08);
+      color:var(--primary);
+      font-size:11px;
+      font-weight:700;
+    }
+
+    .class-card{
+      height:100%;
+      padding:10px;
+      border-radius:12px;
+      border:1px solid rgba(17,24,39,.08);
+      box-shadow:none;
+      overflow:hidden;
+      text-align:left;
+      color:#0f172a;
+      cursor:pointer;
+    }
+
+    .class-title{
+      margin-bottom:5px;
+      font-size:14px;
+      line-height:1.25;
+      font-weight:800;
+    }
+
+    .class-meta{
+      font-size:13px;
+      line-height:1.4;
+      color:#374151;
+    }
+
+    .class-meta.teacher{font-weight:700}
+
+    .note-preview{
+      margin-top:8px;
+      padding:6px 8px;
+      border-radius:10px;
+      border:1px solid #f0d36b;
+      background:#fff3cd;
+      color:#7a4b00;
+      font-size:12px;
+      line-height:1.35;
+      font-weight:700;
+      display:-webkit-box;
+      -webkit-line-clamp:2;
+      -webkit-box-orient:vertical;
+      overflow:hidden;
+    }
+
+    .calendar-board{
+      min-width:980px;
+    }
+
+    .calendar-grid{
+      display:grid;
+      grid-template-columns:repeat(7,minmax(130px,1fr));
+      gap:6px;
+    }
+
+    .calendar-head{
+      position:sticky;
+      top:0;
+      z-index:3;
+      padding:8px 4px 10px;
+      text-align:center;
+      font-weight:800;
+      color:#1f3b64;
+      background:linear-gradient(to bottom,#ffffff 75%,rgba(255,255,255,.96));
+    }
+
+    .calendar-board.week-board{
+      min-width:1180px;
+    }
+
+    .calendar-board.week-board .calendar-grid{
+      grid-template-columns:repeat(7,minmax(160px,1fr));
+    }
+
+    .calendar-board.week-board .calendar-day{
+      min-height:220px;
+    }
+
+    .calendar-head .head-date{
+      display:block;
+      margin-top:4px;
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    .calendar-day{
+      min-height:140px;
+      padding:8px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:#fbfdff;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+
+    .calendar-day.other-month{opacity:.42}
+
+    .calendar-date{
+      text-align:right;
+      font-size:18px;
+      font-weight:800;
+      color:#1f2937;
+    }
+
+    .calendar-item{
+      padding:7px;
+      border-radius:10px;
+      border:1px solid rgba(17,24,39,.08);
+      background:#fff;
+      color:#0f172a;
+      font-size:12px;
+      line-height:1.4;
+      cursor:pointer;
+    }
+
+    .calendar-item-title{
+      margin-bottom:2px;
+      font-weight:800;
+      display:-webkit-box;
+      -webkit-line-clamp:2;
+      -webkit-box-orient:vertical;
+      overflow:hidden;
+    }
+
+    .calendar-empty{
+      flex:1;
+      min-height:34px;
+      padding:6px;
+      border-radius:10px;
+      cursor:pointer;
+    }
+
+    .calendar-empty.has-note{
+      background:rgba(37,99,235,.08);
+      border:1px dashed rgba(37,99,235,.35);
+      color:var(--primary);
+      font-size:12px;
+      font-weight:700;
+    }
+
+    .list-item{
+      padding:12px;
+      margin-bottom:12px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:var(--surface);
+    }
+
+    .list-clickable{
+      cursor:pointer;
+      padding-bottom:6px;
+    }
+
+    .list-item strong{
+      display:block;
+      margin-bottom:8px;
+      font-size:16px;
+    }
+
+    .list-line{
+      font-size:14px;
+      line-height:1.45;
+      color:#4b5563;
+    }
+
+    .list-actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:10px;
+    }
+
+    .exam-chip{display:none}
+
+    .exam-item,.exam-card{
+      background:#ffe4e1 !important;
+      border:1px solid rgba(194,76,76,.18);
+    }
+
+    .exam-badge{
+      display:inline-block;
+      margin-bottom:4px;
+      padding:2px 6px;
+      border-radius:999px;
+      background:#fff;
+      color:#9b1c1c;
+      font-size:11px;
+      font-weight:800;
+    }
+
+    .exam-row-label{
+      font-weight:800;
+      color:#9b1c1c;
+    }
+
+    .legend{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+
+    .legend-item{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border:1px solid var(--border);
+      border-radius:999px;
+      background:#fff;
+      font-size:13px;
+    }
+
+    .legend-color{
+      width:14px;
+      height:14px;
+      border-radius:50%;
+      border:1px solid rgba(0,0,0,.12);
+    }
+
+    .modal{
+      position:fixed;
+      inset:0;
+      z-index:100;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      background:rgba(15,23,42,.45);
+    }
+
+    .modal.show{display:flex}
+
+    .modal-box{
+      width:min(720px,100%);
+      padding:22px;
+      background:#fff;
+      border-radius:18px;
+      box-shadow:0 20px 50px rgba(0,0,0,.18);
+    }
+
+    .modal-head{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:14px;
+    }
+
+    .modal-title{
+      font-size:22px;
+      font-weight:700;
+    }
+
+    .close-btn{
+      width:40px;
+      height:40px;
+      padding:0;
+      border-radius:10px;
+      background:#eef2f7;
+      color:#111827;
+      flex:0 0 auto;
+    }
+
+    .note-box{
+      width:100%;
+      min-height:180px;
+      margin:10px 0 14px;
+      padding:12px;
+      border:1px solid var(--border-strong);
+      border-radius:12px;
+      resize:vertical;
+    }
+
+    .modal-actions{
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+    }
+
+    .mini-action{display:none}
+
+    .sidebar-section-title{
+      margin:2px 0 10px;
+      font-size:12px;
+      font-weight:700;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.06em;
+    }
+
+    .compact-note{margin-top:4px}
+
+    body.sidebar-collapsed .app{
+      grid-template-columns:84px minmax(0,1fr);
+    }
+
+    body.sidebar-collapsed .sidebar{
+      padding:12px;
+    }
+
     body.sidebar-collapsed .sidebar-brand,
     body.sidebar-collapsed .panel h1,
     body.sidebar-collapsed .panel h2,
@@ -119,70 +674,564 @@
     body.sidebar-collapsed .row,
     body.sidebar-collapsed textarea,
     body.sidebar-collapsed input,
-    body.sidebar-collapsed select { display: none !important; }
-    body.sidebar-collapsed .panel { padding: 10px; border-radius: 14px; }
-    body.sidebar-collapsed .panel { margin-bottom: 10px; }
-    body.sidebar-collapsed .sidebar .panel > *:first-child { margin-top: 0; }
-    body.sidebar-collapsed .sidebar .panel::after { content: attr(data-mini); display:block; text-align:center; font-size:24px; line-height:1; padding: 10px 0; }
-    body.sidebar-collapsed .sidebar .panel { min-height: 58px; }
-    body.sidebar-collapsed .sidebar .panel[data-mini="✍️"]::before,
-    body.sidebar-collapsed .sidebar .panel[data-mini="📷"]::before,
-    body.sidebar-collapsed .sidebar .panel[data-mini="➕"]::before,
-    body.sidebar-collapsed .sidebar .panel[data-mini="📚"]::before { display:none; }
-    .sidebar-section-title { font-size: 12px; color:#6b7280; font-weight:700; text-transform:uppercase; letter-spacing:.06em; margin: 2px 0 10px; }
+    body.sidebar-collapsed select{
+      display:none !important;
+    }
 
-    .mini-action { display:none; }
+    body.sidebar-collapsed .panel{
+      min-height:58px;
+      padding:10px;
+      margin-bottom:10px;
+      border-radius:12px;
+    }
+
     body.sidebar-collapsed .scan-action-btn,
-    body.sidebar-collapsed .form-action-btn,
-    body.sidebar-collapsed #clearBtn { display:none !important; }
-    body.sidebar-collapsed .mini-action { display:flex !important; width:100%; justify-content:center; align-items:center; min-height:48px; font-size:24px; color:#16345d; background:#eef4fb; border:1px solid #dbe3ee; border-radius:12px; }
-    body.sidebar-collapsed .sidebar .compact-panel { padding: 10px; }
-    .exam-item, .exam-card { background:#ffe4e1 !important; border:1px solid rgba(194,76,76,.18); }
-    .exam-badge { display:inline-block; font-size:11px; font-weight:800; color:#9b1c1c; background:#fff; border-radius:999px; padding:2px 6px; margin-bottom:4px; }
-    .exam-row-label { font-weight:800; color:#9b1c1c; }
+    body.sidebar-collapsed .form-action-btn{
+      display:none !important;
+    }
 
-    .panel.compact-panel { padding: 14px; }
-    body.toolbar-collapsed .schedule-wrap { max-height: calc(100vh - 72px); }
-    .schedule-wrap { transition: max-height .28s ease; }
+    body.sidebar-collapsed .mini-action{
+      display:flex !important;
+      width:100%;
+      min-height:48px;
+      align-items:center;
+      justify-content:center;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:#eef4fb;
+      color:#16345d;
+      font-size:24px;
+      cursor:pointer;
+    }
 
-    @media (max-width: 1100px) { .toolbar-grid { grid-template-columns: 1fr 1fr; } }
-    @media (max-width: 960px) { .app { grid-template-columns: 1fr; } body.sidebar-collapsed .app { grid-template-columns: 1fr; } .sidebar { border-right: none; border-bottom: 1px solid #dbe3ee; max-height: none; } .main { max-height: none; } .schedule-wrap { max-height: none; } .top-sticky { position: static; } .toolbar-grid { grid-template-columns: 1fr; } }
-  
-    :root { --bg:#f5f7fb; --surface:#ffffff; --surface-soft:#f8fafc; --border:#e5e7eb; --text:#111827; --muted:#6b7280; --primary:#2563eb; }
-    body { background: var(--bg); color: var(--text); }
-    .app { grid-template-columns: 320px 1fr; }
-    .sidebar { background: var(--surface); border-right: 1px solid var(--border); padding: 16px; }
-    .main { padding: 18px; }
-    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 12px; box-shadow: none; backdrop-filter: none; }
-    h1, h2 { margin: 0 0 10px; font-size: 16px; }
-    .muted, .small { color: var(--muted); font-size: 12px; }
-    input, select, textarea { padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; box-shadow: none; }
-    input:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.12); }
-    button { border-radius: 10px; padding: 10px 12px; }
-    .btn-primary { background: var(--primary); }
-    .btn-secondary { background: #f3f4f6; border: 1px solid var(--border); }
-    .btn-danger { background: #dc2626; }
-    .dropzone, .preview-box, .ocr-log, .schedule-wrap, .list-item, .modal-box, .calendar-day, .calendar-item, .class-card, .legend-item { box-shadow: none !important; }
-    .dropzone, .preview-box, .ocr-log, .schedule-wrap, .list-item, .calendar-day { border-radius: 12px; border-color: var(--border); }
-    .schedule-wrap { padding: 10px; max-height: calc(100vh - 120px); }
-    .top-sticky { background: transparent; padding-bottom: 8px; margin-bottom: 10px; }
-    .toolbar-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
-    .toolbar-grid .panel { padding: 12px; }
-    .toolbar-toggle { margin-bottom: 8px; }
-    .sidebar-topbar { background: var(--surface); margin-bottom: 10px; padding-bottom: 6px; }
-    .sidebar-brand { font-size: 16px; }
-    .icon-btn { width: 40px; height: 40px; background: #f3f4f6; border-radius: 10px; }
-    .class-card { padding: 10px; border-radius: 10px; border: 1px solid rgba(17,24,39,0.08); }
-    .calendar-day { min-height: 132px; padding: 8px; gap: 6px; }
-    .calendar-item { border-radius: 10px; padding: 6px 7px; }
-    .list-item { border-radius: 12px; padding: 12px; background: var(--surface); }
-    .legend { display:none; }
-    .exam-chip { display:none; }
-    .panel.hero-panel { display:none; }
-    .panel.data-panel .small, #scanStatus, #ocrLog { display:none; }
-    .compact-note { margin-top: 4px; }
-    @media (max-width: 960px) { .app { grid-template-columns: 1fr; } .main { padding: 14px; } .toolbar-grid { grid-template-columns: 1fr 1fr; } }
-    @media (max-width: 640px) { .toolbar-grid, .row { grid-template-columns: 1fr; } .schedule-wrap { padding: 8px; } }
+    body.sidebar-collapsed .sidebar .panel::after{
+      content:attr(data-mini);
+      display:none;
+    }
+
+    body.toolbar-collapsed .schedule-wrap{
+      flex:1;
+    }
+
+    @media (max-width:1100px){
+      .toolbar-grid{grid-template-columns:1fr 1fr}
+    }
+
+    @media (max-width:960px){
+      .app,
+      body.sidebar-collapsed .app{
+        grid-template-columns:1fr;
+      }
+
+      .sidebar{
+        max-height:none;
+        border-right:none;
+        border-bottom:1px solid var(--border);
+      }
+
+      .main{
+        min-height:100dvh;
+        height:100dvh;
+        padding:14px;
+        overflow:hidden;
+      }
+
+      .top-sticky{
+        position:static;
+        background:transparent;
+        padding-bottom:0;
+      }
+
+      .schedule-wrap{
+        flex:1;
+        min-height:0;
+        max-height:none;
+      }
+
+      .toolbar-grid{
+        grid-template-columns:1fr;
+      }
+    }
+
+    @media (max-width:640px){
+      .row,
+      .toolbar-grid{
+        grid-template-columns:1fr;
+      }
+
+      .main{padding:12px}
+      .schedule-wrap{padding:8px}
+      .modal{padding:12px}
+      .modal-box{padding:16px}
+    }
+
+
+    .mobile-sidebar-toggle,
+    .mobile-backdrop{
+      display:none;
+    }
+
+    @media (max-width:960px){
+      html,body{
+        height:100%;
+        min-height:100%;
+        overflow:hidden;
+      }
+
+      body{
+        overflow:hidden;
+      }
+
+      .app,
+      body.sidebar-collapsed .app{
+        display:block;
+        grid-template-columns:1fr;
+        height:100dvh;
+        min-height:100dvh;
+      }
+
+      .sidebar{
+        position:fixed;
+        top:0;
+        left:0;
+        bottom:0;
+        width:min(88vw,380px);
+        max-width:380px;
+        height:100dvh;
+        z-index:130;
+        margin:0;
+        padding:14px 14px calc(18px + env(safe-area-inset-bottom));
+        overflow:auto;
+        background:var(--surface);
+        border-right:1px solid var(--border);
+        border-bottom:none;
+        box-shadow:0 22px 50px rgba(15,23,42,.18);
+        transform:translateX(-106%);
+        transition:transform .24s ease;
+      }
+
+      body.mobile-sidebar-open .sidebar{
+        transform:translateX(0);
+      }
+
+      .mobile-backdrop{
+        display:block;
+        position:fixed;
+        inset:0;
+        z-index:120;
+        background:rgba(15,23,42,.42);
+        opacity:0;
+        pointer-events:none;
+        transition:opacity .22s ease;
+      }
+
+      body.mobile-sidebar-open .mobile-backdrop{
+        opacity:1;
+        pointer-events:auto;
+      }
+
+      .mobile-sidebar-toggle{
+        display:inline-flex;
+        position:fixed;
+        right:16px;
+        bottom:calc(16px + env(safe-area-inset-bottom));
+        z-index:110;
+        width:54px;
+        height:54px;
+        padding:0;
+        align-items:center;
+        justify-content:center;
+        border-radius:999px;
+        background:var(--primary);
+        color:#fff;
+        box-shadow:0 14px 30px rgba(37,99,235,.32);
+        font-size:22px;
+      }
+
+      .main{
+        min-height:100dvh;
+        height:100dvh;
+        padding:12px 12px calc(16px + env(safe-area-inset-bottom));
+        overflow:hidden;
+        gap:10px;
+      }
+
+      .panel{
+        padding:12px;
+        margin-bottom:10px;
+        border-radius:12px;
+      }
+
+      .sidebar-topbar{
+        top:-1px;
+        margin:-2px 0 10px;
+        padding:6px 0 8px;
+      }
+
+      .top-sticky{
+        position:static;
+        top:auto;
+      }
+
+      .toolbar-toggle{
+        flex-wrap:wrap;
+        align-items:flex-start;
+      }
+
+      .toolbar-toggle > strong{
+        font-size:15px;
+      }
+
+      .toolbar-grid{
+        grid-template-columns:1fr;
+        gap:8px;
+      }
+
+      .toolbar-grid .panel{
+        padding:10px;
+      }
+
+      .schedule-wrap{
+        padding:8px;
+        overflow:auto;
+        -webkit-overflow-scrolling:touch;
+        overscroll-behavior:contain;
+        border-radius:12px;
+      }
+
+      .week-table{
+        min-width:1080px;
+      }
+
+      .calendar-board.week-board{
+        min-width:980px;
+      }
+
+      .calendar-board.week-board .calendar-grid{
+        grid-template-columns:repeat(7,minmax(130px,1fr));
+      }
+
+      .calendar-board.week-board .calendar-day{
+        min-height:190px;
+      }
+
+      .week-table .period-col{width:62px}
+      .week-table .time-col{width:124px}
+      .week-table th.time-col,
+      .week-table td.time-col{left:62px}
+
+      .week-table th,
+      .week-table td{
+        padding:8px 6px;
+      }
+
+      .slot{
+        height:88px;
+        padding:6px;
+      }
+
+      .class-card{
+        padding:8px;
+      }
+
+      .class-title{
+        font-size:13px;
+      }
+
+      .class-meta,
+      .note-preview{
+        font-size:11px;
+      }
+
+      .calendar-board{
+        min-width:840px;
+      }
+
+      .calendar-grid{
+        grid-template-columns:repeat(7,minmax(110px,1fr));
+      }
+
+      .calendar-day{
+        min-height:118px;
+        padding:6px;
+      }
+
+      .calendar-date{
+        font-size:16px;
+      }
+
+      .calendar-item{
+        padding:6px;
+        font-size:11px;
+      }
+
+      .list-actions{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+      }
+
+      .legend{
+        display:none;
+      }
+
+      .list-actions button{
+        width:100%;
+      }
+
+      .modal{
+        padding:10px;
+        align-items:flex-end;
+      }
+
+      .modal-box{
+        width:100%;
+        max-height:min(88dvh,720px);
+        overflow:auto;
+        padding:16px;
+        border-radius:18px 18px 0 0;
+      }
+
+      .modal-title{
+        font-size:18px;
+      }
+
+      .modal-actions{
+        position:sticky;
+        bottom:0;
+        background:#fff;
+        padding-top:8px;
+        flex-direction:column-reverse;
+      }
+
+      .modal-actions button{
+        width:100%;
+      }
+
+      input,select,textarea,button{
+        font-size:16px;
+      }
+
+      body.sidebar-collapsed .sidebar{
+        padding:14px 14px calc(18px + env(safe-area-inset-bottom));
+      }
+
+      body.sidebar-collapsed .sidebar .panel,
+      body.sidebar-collapsed .sidebar .panel > *{
+        display:block !important;
+      }
+
+      body.sidebar-collapsed .sidebar .panel{
+        min-height:unset;
+        padding:12px;
+        margin-bottom:10px;
+      }
+
+      body.sidebar-collapsed .mini-action{
+        display:none !important;
+      }
+
+      body.mobile-sidebar-open,
+      body.mobile-filter-open{
+        overflow:hidden;
+      }
+    }
+
+    @media (max-width:640px){
+      .main{
+        padding:10px 10px calc(12px + env(safe-area-inset-bottom));
+      }
+
+      .row{
+        grid-template-columns:1fr;
+        gap:8px;
+      }
+
+      .list-actions{
+        grid-template-columns:1fr;
+      }
+
+      .icon-btn{
+        width:38px;
+        height:38px;
+      }
+
+      .empty-note-badge{
+        font-size:10px;
+      }
+    }
+
+    .mobile-appbar,
+    .mobile-filter-backdrop{
+      display:none;
+    }
+
+    .scroll-hint{
+      display:none;
+      padding:10px 12px;
+      border:1px dashed rgba(37,99,235,.28);
+      border-radius:12px;
+      background:rgba(37,99,235,.06);
+      color:#1d4ed8;
+      font-size:12px;
+      font-weight:700;
+    }
+
+    @media (max-width:960px){
+      .mobile-sidebar-toggle{
+        display:none !important;
+      }
+
+      .mobile-appbar{
+        position:sticky;
+        top:0;
+        z-index:90;
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:10px;
+        padding:10px 2px 12px;
+        margin-bottom:2px;
+        background:linear-gradient(to bottom,var(--bg) 70%,rgba(244,247,251,.92));
+      }
+
+      .mobile-appbar-title{
+        min-width:0;
+      }
+
+      .mobile-appbar-title strong{
+        display:block;
+        font-size:18px;
+        line-height:1.2;
+      }
+
+      .mobile-appbar-title span{
+        display:block;
+        margin-top:2px;
+        font-size:12px;
+        color:var(--muted);
+      }
+
+      .mobile-appbar-actions{
+        display:flex;
+        align-items:center;
+        gap:8px;
+        flex:0 0 auto;
+      }
+
+      .mobile-pill-btn{
+        min-width:44px;
+        height:42px;
+        padding:0 12px;
+        border-radius:999px;
+        border:1px solid var(--border);
+        background:#fff;
+        color:#16345d;
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        gap:6px;
+        font-size:14px;
+        font-weight:800;
+        box-shadow:var(--shadow);
+      }
+
+      .mobile-pill-btn .icon{
+        font-size:18px;
+        line-height:1;
+      }
+
+      .mobile-filter-backdrop{
+        display:block;
+        position:fixed;
+        inset:0;
+        z-index:119;
+        background:rgba(15,23,42,.38);
+        opacity:0;
+        pointer-events:none;
+        transition:opacity .22s ease;
+      }
+
+      body.mobile-filter-open .mobile-filter-backdrop{
+        opacity:1;
+        pointer-events:auto;
+      }
+
+      .top-sticky{
+        position:fixed;
+        left:0;
+        right:0;
+        bottom:0;
+        top:auto;
+        z-index:121;
+        margin:0;
+        padding:14px 12px calc(14px + env(safe-area-inset-bottom));
+        background:transparent;
+        transform:translateY(108%);
+        transition:transform .24s ease;
+        pointer-events:none;
+      }
+
+      body.mobile-filter-open .top-sticky{
+        transform:translateY(0);
+        pointer-events:auto;
+      }
+
+      #toolbarWrap > .toolbar-toggle,
+      #toolbarWrap > .toolbar-grid{
+        background:#fff;
+        box-shadow:0 18px 40px rgba(15,23,42,.16);
+      }
+
+      #toolbarWrap > .toolbar-toggle{
+        margin:0;
+        padding:12px 12px 10px;
+        border-radius:18px 18px 0 0;
+        border:1px solid var(--border);
+        border-bottom:none;
+      }
+
+      #toolbarWrap > .toolbar-grid{
+        padding:0 12px 12px;
+        border:1px solid var(--border);
+        border-top:none;
+        border-radius:0 0 18px 18px;
+        max-height:min(70dvh,560px);
+        overflow:auto;
+      }
+
+      .toolbar-toggle > strong{
+        display:flex;
+        align-items:center;
+        gap:8px;
+      }
+
+      .toolbar-toggle > strong::before{
+        content:'⚙️';
+      }
+
+      .toolbar-grid .panel:last-child{
+        margin-bottom:0;
+      }
+
+      .scroll-hint{
+        display:block;
+      }
+    }
+
+    @media (max-width:640px){
+      .mobile-appbar{
+        padding-top:8px;
+      }
+
+      .mobile-appbar-title strong{
+        font-size:17px;
+      }
+
+      .mobile-pill-btn{
+        height:40px;
+        padding:0 10px;
+      }
+    }
 
   </style>
 </head>
@@ -190,11 +1239,11 @@
   <div class="app">
     <aside class="sidebar">
       <div class="sidebar-topbar">
-        <div class="sidebar-brand">TKB HAU</div>
+        <div class="sidebar-brand">TKB Pro</div>
         <button class="icon-btn" id="toggleSidebarBtn" title="Thu gọn / mở rộng menu">☰</button>
       </div>
       <div class="panel compact-panel" data-mini="✍️"><h1>Quản lý thời khóa biểu</h1><p class="muted">Theo dõi lịch học, lịch thi và ghi chú trong một giao diện gọn gàng. Có thể nhập tay hoặc quét ảnh để tạo lịch nhanh.</p></div>
-      <div class="panel compact-panel" data-mini="📷">
+      <div class="panel compact-panel hidden" data-mini="📷">
         <h2>Quét ảnh</h2>
         <div id="dropzone" class="dropzone"><strong>Thả hoặc dán ảnh</strong><div class="small compact-note">Có thể chọn file từ máy.</div></div>
         <input id="scanImage" type="file" accept="image/*" />
@@ -236,16 +1285,31 @@
 <div class="panel compact-panel data-panel" data-mini="📚"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;"><h2>Dữ liệu</h2><button class="btn-danger" id="clearBtn">Xóa hết</button></div><div class="small" style="margin-bottom:10px;">Môn học và lịch thi đã lưu.</div><div id="subjectList"></div><div class="mini-action" title="Danh sách">📚</div></div>
     </aside>
     <main class="main">
+      <div class="mobile-appbar">
+        <div class="mobile-appbar-title">
+          <strong>TKB Pro</strong>
+          <span>Xem lịch nhanh trên điện thoại</span>
+        </div>
+        <div class="mobile-appbar-actions">
+          <button class="mobile-pill-btn" id="mobileMenuBtn" title="Mở menu"><span class="icon">☰</span></button>
+          <button class="mobile-pill-btn" id="mobileFilterBtn" title="Mở bộ lọc"><span class="icon">⚙️</span></button>
+        </div>
+      </div>
       <div class="top-sticky" id="toolbarWrap"><div class="toolbar-toggle"><strong>Tùy chọn</strong><button class="btn-secondary" id="toggleToolbarBtn">Thu gọn</button></div><div class="toolbar-grid">
         <div class="panel"><strong>Xem</strong><select id="viewMode" style="margin-top:8px;"><option value="week">Theo tuần</option><option value="month">Theo tháng</option><option value="overall">Toàn bộ</option></select></div>
         <div class="panel"><strong>Ngày</strong><input id="anchorDate" type="date" /></div>
         <div class="panel"><strong>Tháng / Năm</strong><select id="monthSelect" style="margin-top:8px;"></select><select id="yearSelect"></select></div>
         <div class="panel"><strong>Hiển thị</strong><label class="small" style="display:flex;gap:8px;align-items:center;margin-top:10px;"><input id="showFuture" type="checkbox" checked style="width:auto;margin:0;" /> Sắp diễn ra</label><label class="small" style="display:flex;gap:8px;align-items:center;margin-top:8px;"><input id="showPast" type="checkbox" checked style="width:auto;margin:0;" /> Đã kết thúc</label></div>
       </div></div>
-      <div class="panel" style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;"><div style="font-size:18px;font-weight:800;color:#111827;">Lịch học</div><div class="small" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:999px;padding:6px 10px;">Lưu trên trình duyệt</div></div></div><div class="schedule-wrap" id="scheduleWrap"><div id="scheduleTable"></div></div>
+      <div class="panel" style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;"><div style="font-size:18px;font-weight:800;color:#111827;">Lịch học</div><div class="small" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:999px;padding:6px 10px;">Lưu trên trình duyệt</div></div></div><div class="scroll-hint" id="scrollHint">Vuốt ngang để xem đủ lịch khi ở chế độ tuần hoặc tháng.</div><div class="schedule-wrap" id="scheduleWrap"><div id="scheduleTable"></div></div>
       <div class="legend" id="legend"></div>
     </main>
   </div>
+
+  <div class="mobile-backdrop" id="mobileBackdrop"></div>
+  <div class="mobile-filter-backdrop" id="mobileFilterBackdrop"></div>
+  <button class="mobile-sidebar-toggle" id="mobileSidebarToggle" title="Mở menu">☰</button>
+
   <div class="modal" id="noteModal"><div class="modal-box"><div class="modal-head"><div><div class="modal-title" id="modalTitle">Ghi chú</div><div class="small" id="modalInfo"></div></div><button class="close-btn" id="closeModal">✕</button></div><label for="noteText">Nhập ghi chú cho ô thời khóa biểu này</label><textarea class="note-box" id="noteText"></textarea><div class="modal-actions"><button class="btn-secondary" id="deleteNoteBtn">Xóa ghi chú</button><button class="btn-primary" id="saveNoteBtn">Lưu</button></div></div></div>
   <script>
     const periods = [
@@ -268,9 +1332,17 @@
     let editingExamId = null;
     let pendingScanImage = null;
     const scheduleTable = document.getElementById('scheduleTable');
+    const scheduleWrap = document.getElementById('scheduleWrap');
     const toolbarWrap = document.getElementById('toolbarWrap');
     const toggleToolbarBtn = document.getElementById('toggleToolbarBtn');
     const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
+    const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
+    const mobileBackdrop = document.getElementById('mobileBackdrop');
+    const mobileFilterBackdrop = document.getElementById('mobileFilterBackdrop');
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileFilterBtn = document.getElementById('mobileFilterBtn');
+    const scrollHintEl = document.getElementById('scrollHint');
+    const mobileMq = window.matchMedia('(max-width: 960px)');
     const subjectList = document.getElementById('subjectList');
     const legend = document.getElementById('legend');
     const noteModal = document.getElementById('noteModal');
@@ -293,6 +1365,42 @@
     const scanImageEl = document.getElementById('scanImage');
     const saveExamBtn = document.getElementById('saveExamBtn');
     const cancelExamEditBtn = document.getElementById('cancelExamEditBtn');
+    function isMobileLayout(){return mobileMq.matches;}
+    function openMobileSidebar(){closeMobileFilter(); document.body.classList.add('mobile-sidebar-open');}
+    function closeMobileSidebar(){document.body.classList.remove('mobile-sidebar-open');}
+    function openMobileFilter(){closeMobileSidebar(); document.body.classList.add('mobile-filter-open'); toggleToolbarBtn.textContent='Đóng';}
+    function closeMobileFilter(){document.body.classList.remove('mobile-filter-open'); if(isMobileLayout()) toggleToolbarBtn.textContent='Bộ lọc';}
+    function toggleMobileFilter(){document.body.classList.contains('mobile-filter-open') ? closeMobileFilter() : openMobileFilter();}
+    function toggleSidebar(){
+      if(isMobileLayout()){
+        document.body.classList.contains('mobile-sidebar-open') ? closeMobileSidebar() : openMobileSidebar();
+        return;
+      }
+      document.body.classList.toggle('sidebar-collapsed');
+    }
+    function updateToolbarButtonState(){
+      if(isMobileLayout()){
+        toggleToolbarBtn.textContent = document.body.classList.contains('mobile-filter-open') ? 'Đóng' : 'Bộ lọc';
+      }else{
+        toggleToolbarBtn.textContent = document.body.classList.contains('toolbar-collapsed') ? 'Mở rộng' : 'Thu gọn';
+      }
+    }
+    function syncResponsiveState(){
+      if(isMobileLayout()){
+        document.body.classList.remove('sidebar-collapsed');
+        document.body.classList.remove('toolbar-collapsed');
+        toolbarWrap.classList.remove('toolbar-collapsed');
+        closeMobileFilter();
+      }else{
+        closeMobileSidebar();
+        closeMobileFilter();
+      }
+      updateToolbarButtonState();
+    }
+    function scrollSidebarToTop(){
+      const sidebar = document.querySelector('.sidebar');
+      if(sidebar) sidebar.scrollTo({top:0, behavior:'smooth'});
+    }
     function fillPeriodOptions(){const s=document.getElementById('startPeriod'); const e=document.getElementById('endPeriod'); periods.forEach(p=>{const a=document.createElement('option'); a.value=p.period; a.textContent=`Tiết ${p.period}`; s.appendChild(a); const b=document.createElement('option'); b.value=p.period; b.textContent=`Tiết ${p.period}`; e.appendChild(b);}); s.value='8'; e.value='12';}
     function fillMonthYearOptions(){monthSelectEl.innerHTML=Array.from({length:12},(_,i)=>`<option value="${i}">Tháng ${i+1}</option>`).join(''); const now=getCurrentYear(); yearSelectEl.innerHTML=Array.from({length:9},(_,i)=>now-2+i).map(y=>`<option value="${y}">${y}</option>`).join('');}
     function saveSubjects(){localStorage.setItem(STORAGE_KEY, JSON.stringify(subjects));}
@@ -319,9 +1427,10 @@
     function getVisibleDates(){const mode=viewModeEl.value; if(mode==='week'){const base=startOfWeek(new Date((anchorDateEl.value||getTodayIso())+'T00:00:00')); return eachDate(base,endOfWeek(base));} if(mode==='month'){const r=getMonthRange(Number(yearSelectEl.value), Number(monthSelectEl.value)); return eachDate(r.start,r.end);} const r=getOverallRange(); return eachDate(r.start,r.end);}
     function subjectPassesFilter(subject){const today=new Date(getTodayIso()+'T00:00:00'); const start=toDate(subject.startDate); const end=toDate(subject.endDate); const isPast=end&&end<today; const isFuture=start&&start>today; if(!showPastEl.checked&&isPast) return false; if(!showFutureEl.checked&&isFuture) return false; return true;}
     function getFormValues(){return {id:editingSubjectId||createId(), name:document.getElementById('subjectName').value.trim(), code:document.getElementById('subjectCode').value.trim(), room:document.getElementById('room').value.trim(), teacher:document.getElementById('teacher').value.trim(), day:Number(document.getElementById('day').value), startPeriod:Number(document.getElementById('startPeriod').value), endPeriod:Number(document.getElementById('endPeriod').value), startDate:document.getElementById('startDate').value, endDate:document.getElementById('endDate').value, color:document.getElementById('color').value, initialNote:document.getElementById('initialNote').value.trim()};}
+    function scrollSidebarTop(){const sidebar=document.querySelector('.sidebar'); if(sidebar && window.innerWidth>960){sidebar.scrollTo({top:0,behavior:'smooth'});} else {if(isMobileLayout()) openMobileSidebar(); scrollSidebarToTop();}}
     function resetForm(){editingSubjectId=null; formTitle.textContent='Môn học'; saveSubjectBtn.textContent='Lưu môn học'; cancelEditBtn.classList.add('hidden'); ['subjectName','subjectCode','room','teacher','endDate','initialNote'].forEach(id=>document.getElementById(id).value=''); document.getElementById('startDate').value=getTodayIso(); document.getElementById('day').value='2'; document.getElementById('startPeriod').value='8'; document.getElementById('endPeriod').value='12'; document.getElementById('color').value='#d9e9ff';}
-    function addOrUpdateSubject(){const subject=getFormValues(); if(!subject.name) return alert('Bạn chưa nhập tên môn.'); if(subject.endPeriod<subject.startPeriod) return alert('Tiết kết thúc phải lớn hơn hoặc bằng tiết bắt đầu.'); const idx=subjects.findIndex(s=>s.id===subject.id); if(idx>=0) subjects[idx]=subject; else subjects.push(subject); if(subject.initialNote) notes[subject.id]=subject.initialNote; saveSubjects(); saveNotes(); resetForm(); renderAll();}
-    function startEditSubject(id){const s=subjects.find(x=>x.id===id); if(!s) return; editingSubjectId=id; formTitle.textContent='Cập nhật môn học'; saveSubjectBtn.textContent='Lưu thay đổi'; cancelEditBtn.classList.remove('hidden'); document.getElementById('subjectName').value=s.name||''; document.getElementById('subjectCode').value=s.code||''; document.getElementById('room').value=s.room||''; document.getElementById('teacher').value=s.teacher||''; document.getElementById('day').value=String(s.day||2); document.getElementById('startPeriod').value=String(s.startPeriod||8); document.getElementById('endPeriod').value=String(s.endPeriod||12); document.getElementById('startDate').value=s.startDate||''; document.getElementById('endDate').value=s.endDate||''; document.getElementById('color').value=s.color||'#d9e9ff'; document.getElementById('initialNote').value=notes[s.id]||s.initialNote||''; window.scrollTo({top:0,behavior:'smooth'});}
+    function addOrUpdateSubject(){const subject=getFormValues(); if(!subject.name) return alert('Bạn chưa nhập tên môn.'); if(subject.endPeriod<subject.startPeriod) return alert('Tiết kết thúc phải lớn hơn hoặc bằng tiết bắt đầu.'); const idx=subjects.findIndex(s=>s.id===subject.id); if(idx>=0) subjects[idx]=subject; else subjects.push(subject); if(subject.initialNote) notes[subject.id]=subject.initialNote; saveSubjects(); saveNotes(); resetForm(); renderAll(); if(isMobileLayout()) closeMobileSidebar();}
+    function startEditSubject(id){const s=subjects.find(x=>x.id===id); if(!s) return; editingSubjectId=id; formTitle.textContent='Cập nhật môn học'; saveSubjectBtn.textContent='Lưu thay đổi'; cancelEditBtn.classList.remove('hidden'); document.getElementById('subjectName').value=s.name||''; document.getElementById('subjectCode').value=s.code||''; document.getElementById('room').value=s.room||''; document.getElementById('teacher').value=s.teacher||''; document.getElementById('day').value=String(s.day||2); document.getElementById('startPeriod').value=String(s.startPeriod||8); document.getElementById('endPeriod').value=String(s.endPeriod||12); document.getElementById('startDate').value=s.startDate||''; document.getElementById('endDate').value=s.endDate||''; document.getElementById('color').value=s.color||'#d9e9ff'; document.getElementById('initialNote').value=notes[s.id]||s.initialNote||''; scrollSidebarTop();}
     
     function resetExamForm(){
       editingExamId = null;
@@ -348,6 +1457,7 @@
       saveExams();
       resetExamForm();
       renderAll();
+      if(isMobileLayout()) closeMobileSidebar();
     }
 
     function startEditExam(id){
@@ -361,7 +1471,7 @@
       document.getElementById('examDate').value = exam.date || '';
       document.getElementById('examTime').value = exam.time || '';
       document.getElementById('examRoom').value = exam.room || '';
-      window.scrollTo({top:0, behavior:'smooth'});
+      scrollSidebarTop();
     }
 
     function deleteExam(id){
@@ -376,7 +1486,26 @@
 
     function deleteSubject(id){if(!confirm('Xóa môn học này?')) return; subjects=subjects.filter(s=>s.id!==id); delete notes[id]; saveSubjects(); saveNotes(); if(editingSubjectId===id) resetForm(); renderAll();}
     function timeRangeFromPeriods(startPeriod,endPeriod){return `${periodToTime[startPeriod]||''} - ${periodToTime[endPeriod]||''}`;}
-    function renderTable(){const visibleDates=getVisibleDates(); const filtered=subjects.filter(subjectPassesFilter); const mode=viewModeEl.value; if(mode==='week'){renderWeekTable(visibleDates, filtered); return;} renderCalendar(visibleDates, filtered, mode==='month');}
+    function renderTable(){
+      const visibleDates=getVisibleDates();
+      const filtered=subjects.filter(subjectPassesFilter);
+      const mode=viewModeEl.value;
+      const useMobileWeekCards=isMobileLayout()&&mode==='week';
+      scheduleWrap.dataset.mode=mode;
+      scheduleWrap.dataset.mobileWeek=useMobileWeekCards?'1':'0';
+      scrollHintEl.textContent=useMobileWeekCards
+        ? 'Vuốt ngang để xem đủ 7 ngày trong tuần.'
+        : 'Vuốt ngang để xem đủ lịch khi ở chế độ tuần hoặc tháng.';
+      if(useMobileWeekCards){
+        renderCalendar(visibleDates, filtered, false, true);
+        return;
+      }
+      if(mode==='week'){
+        renderWeekTable(visibleDates, filtered);
+        return;
+      }
+      renderCalendar(visibleDates, filtered, mode==='month');
+    }
     
 function renderWeekTable(visibleDates, filtered){
       scheduleTable.innerHTML='';
@@ -439,7 +1568,7 @@ function renderWeekTable(visibleDates, filtered){
       scheduleTable.querySelectorAll('.class-card[data-exam-id]').forEach(card=>card.addEventListener('click',()=>openExamDetail(card.dataset.examId)));
     }
     
-function renderCalendar(visibleDates, filtered, isMonth){
+function renderCalendar(visibleDates, filtered, isMonth, isWeekCardView=false){
       let gridDates=visibleDates.slice();
       if(isMonth&&gridDates.length){
         const start=startOfWeek(gridDates[0]);
@@ -448,7 +1577,8 @@ function renderCalendar(visibleDates, filtered, isMonth){
       }
       const monthValue=Number(monthSelectEl.value);
       const calendarLabels=['Th 2','Th 3','Th 4','Th 5','Th 6','Th 7','CN'];
-      let html=`<div class="calendar-board"><div class="calendar-grid">`;
+      const boardClass=isWeekCardView?'calendar-board week-board':'calendar-board';
+      let html=`<div class="${boardClass}"><div class="calendar-grid">`;
       calendarLabels.forEach((n,i)=>{
         const sd=gridDates[i];
         html+=`<div class="calendar-head">${n}${sd?`<span class="head-date">${formatHeaderDate(sd)}</span>`:''}</div>`;
@@ -490,12 +1620,13 @@ function renderCalendar(visibleDates, filtered, isMonth){
       subjectList.innerHTML = examHtml + filtered.map(s=>`<div class="list-item"><div class="list-clickable" onclick="startEditSubject('${s.id}')"><strong>${escapeHtml(s.name)}</strong><div class="list-line">${dayLabelFromSubject(s.day)} • ${timeRangeFromPeriods(s.startPeriod,s.endPeriod)}</div><div class="list-line">${escapeHtml(s.room||'')}</div><div class="list-line">${escapeHtml(s.teacher||'')}</div><div class="list-line">${formatDate(s.startDate)} - ${formatDate(s.endDate)}</div></div><div class="list-actions"><button class="btn-secondary" onclick="openSubjectNote('${s.id}')">Ghi chú</button><button class="btn-danger" onclick="deleteSubject('${s.id}')">Xóa</button></div></div>`).join('');
     }
     function renderLegend(){const filtered=subjects.filter(subjectPassesFilter); const uniq=[]; const seen=new Set(); filtered.forEach(s=>{const key=s.name+'|'+s.color; if(!seen.has(key)){seen.add(key); uniq.push(s);}}); legend.innerHTML=uniq.map(s=>`<div class="legend-item"><span class="legend-color" style="background:${s.color}"></span><span>${escapeHtml(s.name)}</span></div>`).join('');}
-    function renderAll(){renderTable(); renderSubjectList(); renderLegend();}
-    function clearAll(){if(!confirm('Bạn chắc chắn muốn xóa toàn bộ môn học, lịch thi và ghi chú?')) return; subjects=[]; exams=[]; notes={}; saveSubjects(); saveExams(); saveNotes(); resetForm(); renderAll();}
+    function updateScrollHint(){if(!scrollHintEl) return; const mode=viewModeEl.value; scrollHintEl.style.display = isMobileLayout() && mode !== 'overall' ? 'block' : 'none';}
+    function renderAll(){renderTable(); renderSubjectList(); renderLegend(); updateScrollHint();}
+    function clearAll(){if(!confirm('Bạn chắc chắn muốn xóa toàn bộ môn học, lịch thi và ghi chú?')) return; subjects=[]; exams=[]; notes={}; saveSubjects(); saveExams(); saveNotes(); resetForm(); renderAll(); if(isMobileLayout()) closeMobileSidebar();}
     function dayLabelFromSubject(day){return day===8?'CN':`Thứ ${day}`;}
-    function openSubjectNote(id){const s=subjects.find(x=>x.id===id); if(!s) return; activeNoteKey=id; modalTitle.textContent=s.name; modalInfo.textContent=`${s.teacher||'Chưa có giảng viên'} • ${s.room||'Chưa có phòng'}`; noteText.value=notes[id]||''; noteModal.classList.add('show');}
-    function openExamDetail(id){const e=exams.find(x=>x.id===id); if(!e) return; activeNoteKey='exam::'+id; modalTitle.textContent='Lịch thi: '+e.name; modalInfo.textContent=`${e.date?formatDate(e.date):''} • ${e.time||''} • ${e.room||''}`; noteText.value=notes[activeNoteKey]||''; noteModal.classList.add('show');}
-    function openEmptyNote(id,date,period){activeNoteKey=id; modalTitle.textContent='Ghi chú thời gian trống'; modalInfo.textContent=`${dayNames[date.getDay()]} ${formatHeaderDate(date)} • ${period}`; noteText.value=notes[id]||''; noteModal.classList.add('show');}
+    function openSubjectNote(id){const s=subjects.find(x=>x.id===id); if(!s) return; closeMobileSidebar(); closeMobileFilter(); activeNoteKey=id; modalTitle.textContent=s.name; modalInfo.textContent=`${s.teacher||'Chưa có giảng viên'} • ${s.room||'Chưa có phòng'}`; noteText.value=notes[id]||''; noteModal.classList.add('show');}
+    function openExamDetail(id){const e=exams.find(x=>x.id===id); if(!e) return; closeMobileSidebar(); closeMobileFilter(); activeNoteKey='exam::'+id; modalTitle.textContent='Lịch thi: '+e.name; modalInfo.textContent=`${e.date?formatDate(e.date):''} • ${e.time||''} • ${e.room||''}`; noteText.value=notes[activeNoteKey]||''; noteModal.classList.add('show');}
+    function openEmptyNote(id,date,period){closeMobileSidebar(); closeMobileFilter(); activeNoteKey=id; modalTitle.textContent='Ghi chú thời gian trống'; modalInfo.textContent=`${dayNames[date.getDay()]} ${formatHeaderDate(date)} • ${period}`; noteText.value=notes[id]||''; noteModal.classList.add('show');}
     function closeNote(){noteModal.classList.remove('show'); activeNoteKey=null;}
     function saveCurrentNote(){if(!activeNoteKey) return; const value=noteText.value.trim(); if(value) notes[activeNoteKey]=value; else delete notes[activeNoteKey]; saveNotes(); closeNote(); renderAll();}
     function deleteCurrentNote(){if(!activeNoteKey) return; delete notes[activeNoteKey]; saveNotes(); closeNote(); renderAll();}
@@ -524,8 +1655,18 @@ function renderCalendar(visibleDates, filtered, isMonth){
     scanImageEl.addEventListener('change',e=>{const file=e.target.files&&e.target.files[0]; if(file) setScanImageFromBlob(file);});
     document.addEventListener('paste',e=>{const items=e.clipboardData&&e.clipboardData.items; if(!items) return; for(const item of items){if(item.type&&item.type.startsWith('image/')){const file=item.getAsFile(); if(file){setScanImageFromBlob(file); scanStatusEl.textContent='Đã dán ảnh từ clipboard. Chọn Phân tích ảnh để trích xuất dữ liệu.'; e.preventDefault(); break;}}}});
     dropzoneEl.addEventListener('dragover',e=>{e.preventDefault(); dropzoneEl.classList.add('dragover');}); dropzoneEl.addEventListener('dragleave',()=>dropzoneEl.classList.remove('dragover')); dropzoneEl.addEventListener('drop',e=>{e.preventDefault(); dropzoneEl.classList.remove('dragover'); const file=e.dataTransfer.files&&e.dataTransfer.files[0]; if(file&&file.type.startsWith('image/')) setScanImageFromBlob(file);});
-    toggleToolbarBtn.addEventListener('click',()=>{document.body.classList.toggle('toolbar-collapsed'); toolbarWrap.classList.toggle('toolbar-collapsed'); toggleToolbarBtn.textContent = document.body.classList.contains('toolbar-collapsed') ? 'Mở rộng' : 'Thu gọn';});
-    toggleSidebarBtn.addEventListener('click',()=>{document.body.classList.toggle('sidebar-collapsed');});
+    toggleToolbarBtn.addEventListener('click',()=>{if(isMobileLayout()){toggleMobileFilter(); return;} document.body.classList.toggle('toolbar-collapsed'); toolbarWrap.classList.toggle('toolbar-collapsed'); updateToolbarButtonState();});
+    toggleSidebarBtn.addEventListener('click',toggleSidebar);
+    mobileSidebarToggle.addEventListener('click',()=>{if(isMobileLayout()) openMobileSidebar(); else toggleSidebar();});
+    mobileMenuBtn.addEventListener('click',openMobileSidebar);
+    mobileFilterBtn.addEventListener('click',toggleMobileFilter);
+    mobileBackdrop.addEventListener('click',closeMobileSidebar);
+    mobileFilterBackdrop.addEventListener('click',closeMobileFilter);
+    mobileMq.addEventListener('change',syncResponsiveState);
+    [viewModeEl, anchorDateEl, monthSelectEl, yearSelectEl, showFutureEl, showPastEl].forEach(el=>el.addEventListener('change',()=>{if(isMobileLayout()) closeMobileFilter();}));
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMobileSidebar(); closeMobileFilter(); if(noteModal.classList.contains('show')) closeNote();}});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape') closeMobileSidebar();});
+    document.querySelectorAll('.mini-action').forEach(btn=>btn.addEventListener('click',()=>{if(isMobileLayout()) openMobileSidebar(); else if(document.body.classList.contains('sidebar-collapsed')) document.body.classList.remove('sidebar-collapsed');}));
     document.getElementById('saveSubjectBtn').addEventListener('click',addOrUpdateSubject); document.getElementById('cancelEditBtn').addEventListener('click',resetForm); saveExamBtn.addEventListener('click', addOrUpdateExam); cancelExamEditBtn.addEventListener('click', resetExamForm); document.getElementById('clearBtn').addEventListener('click',clearAll); document.getElementById('closeModal').addEventListener('click',closeNote); document.getElementById('saveNoteBtn').addEventListener('click',saveCurrentNote); document.getElementById('deleteNoteBtn').addEventListener('click',deleteCurrentNote); document.getElementById('scanBtn').addEventListener('click',runOcr); document.getElementById('clearScanBtn').addEventListener('click',clearScanImage); noteModal.addEventListener('click',e=>{if(e.target===noteModal) closeNote();}); viewModeEl.addEventListener('change',renderAll); anchorDateEl.addEventListener('change',renderAll); monthSelectEl.addEventListener('change',renderAll); yearSelectEl.addEventListener('change',renderAll); showFutureEl.addEventListener('change',renderAll); showPastEl.addEventListener('change',renderAll);
     fillPeriodOptions(); fillMonthYearOptions(); resetForm(); resetExamForm(); const todayIso = getTodayIso(); anchorDateEl.value=todayIso; const todayDate = new Date(todayIso+'T00:00:00'); monthSelectEl.value=String(todayDate.getMonth()); yearSelectEl.value=String(todayDate.getFullYear());
     if(!subjects.length){subjects=[
@@ -542,7 +1683,7 @@ function renderCalendar(visibleDates, filtered, isMonth){
       ];
       subjects.forEach(s=>{if(s.initialNote) notes[s.id]=s.initialNote;}); saveSubjects(); saveExams(); saveNotes();}
     if(!exams.length){exams=[{id:createId(), name:'An toàn và bảo mật hệ thống thông tin', date:'2026-04-02', time:'15H00-17H00', room:'ĐHKT M-M13.05 (P04)'},{id:createId(), name:'Hệ quản trị cơ sở dữ liệu', date:'2026-04-07', time:'7H30-9H30', room:'ĐHKT M-M13.06 (P04)'}]; saveExams();}
-    renderAll(); window.startEditSubject=startEditSubject; window.openSubjectNote=openSubjectNote; window.openExamDetail=openExamDetail; window.startEditExam=startEditExam; window.deleteExam=deleteExam; window.deleteSubject=deleteSubject;
+    syncResponsiveState(); updateToolbarButtonState(); renderAll(); window.startEditSubject=startEditSubject; window.openSubjectNote=openSubjectNote; window.openExamDetail=openExamDetail; window.startEditExam=startEditExam; window.deleteExam=deleteExam; window.deleteSubject=deleteSubject;
   </script>
 </body>
 </html>
